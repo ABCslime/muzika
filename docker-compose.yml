@@ -6,7 +6,7 @@ services:
     image: busybox
     volumes:
       - temp:/rw
-    entrypoint: ['sh', '-c', 'mkdir -p /rw/incomplete /app1/downloads /rw/database && chmod -R 777 /rw/incomplete /rw/downloads /rw/database']
+    entrypoint: ['sh', '-c', 'mkdir -p /rw/incomplete /rw/downloads /rw/database && chmod -R 777 /rw/incomplete /rw/downloads /rw/database']
     command: [ ]
 
   app:
