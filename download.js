@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'; // Import node-fetch
 import prettier from 'prettier';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 export class Download {
     constructor() {
     }
