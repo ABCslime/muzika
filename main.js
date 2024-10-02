@@ -12,6 +12,7 @@ const ids = ["2432e9ef-7f8e-42cc-99d5-ae9d15be93ab","7272a62a-8457-4f14-9300-be3
                     "210aa572-7107-41a6-b110-81afec1f5628","f9c7ac8a-52c8-4cb1-ae37-33472c2ca204","aa4ba3e1-194f-400b-b023-40c5091f7f5a",
                     "8997f23c-5475-48ef-9516-32bc1f8c3b0b","bb4f44c8-d2d3-436e-8861-8b0c66313e5d","6f31f278-8cc6-47e6-9492-18dc0b2ee624",
                     "5823b99c-2c5d-42b9-955d-7755502f0e46"]
+let taskIndex = 0;
 let lastOut
 // Middleware to parse JSON bodies
 app.use(cors({
@@ -26,10 +27,8 @@ let db = setupDatabase(); // Initialize the database
 async function runTasksUntilSuccess(limit) {
     let ongoingTasks = {};
     let successCount = 0;
-    let taskIndex = 0;
-
     while (successCount < limit) {
-        while (Object.values(ongoingTasks).length < 2 && taskIndex < limit * 2) { // maintain 5 concurrent tasks
+        while (Object.values(ongoingTasks).length < 2 && taskIndex < 10) { // maintain 5 concurrent tasks
             let random = await downClinet.findRandom()
             if (random != null){
                 ongoingTasks[random.name] = downClinet.get(random, ids[taskIndex])
@@ -63,6 +62,7 @@ async function runTasksUntilSuccess(limit) {
 }
 
 async function downloadSongs(db){
+    
     let paths = await runTasksUntilSuccess(10)
     for (const path of paths){
         const insertSong = db.prepare('INSERT INTO songs (name, artist, path) VALUES (?, ?, ?)');
@@ -75,6 +75,28 @@ async function downloadSongs(db){
 
 }
 
+app.get('/api/getLikedSongs', async (req, res) => {
+    const getLikedSongs = db.prepare('SELECT * FROM songs WHERE liked = 1');
+    const likedSongs = getLikedSongs.all();
+    res.json(likedSongs);
+});
+
+app.get('/api/removeUnlikedSongs', async (req, res) => {
+    //remove all songs that are not liked and were lisend to and delete them from file system
+
+    const getUnlikedSongs = db.prepare('SELECT * FROM songs WHERE liked = 0 AND played = 1');
+    const unlikedSongs = getUnlikedSongs.all();
+    for (const song of unlikedSongs){
+        try{
+            fs.unlinkSync(song.path);
+        }catch (e){
+            console.log(e)
+        }
+    }
+    const removeUnlikedSongs = db.prepare('DELETE FROM songs WHERE liked = 0 AND played = 1');
+    removeUnlikedSongs.run();
+    res.status(200).json({ message: 'Unliked songs removed' });
+});
 
 app.get('/api/getMetadata', async (req, res) => {
     index = index + 1;
