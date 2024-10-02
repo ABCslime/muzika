@@ -203,6 +203,8 @@ app.get('/api/getSong/:song_id', (req, res) => {
         res.writeHead(200, head);
         fs.createReadStream(song).pipe(res);
     }
+    //set song as played
+    db.prepare('UPDATE songs SET played = 1 WHERE id = ?').run(song_id);
 });
 
 
